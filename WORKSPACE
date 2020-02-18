@@ -7,18 +7,20 @@ workspace(name = "cilium")
 #
 # No other line in this file may have ENVOY_SHA followed by an equals sign!
 #
-ENVOY_SHA = "fc40c08a807111943c4b3cbe11df494f3e0df4d4"
-ENVOY_SHA256 = "f6bb1bfbd5a6681ef4898f396e671ff4adcd372f6dca8d0cfa980f8b91914ff1"
+ENVOY_SHA = "bb7ceff4c3c5bd4555dff28b6e56d27f2f8be0a7"
+ENVOY_SHA256 = "95d365cea109f1f6b06f4c010602b5a2f8dc2e65d631b5e2c17e62aa114408d9"
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "envoy",
-    url = "https://github.com/jrajahalme/envoy/archive/" + ENVOY_SHA + ".tar.gz",
+    url = "https://github.com/envoyproxy/envoy/archive/" + ENVOY_SHA + ".tar.gz",
     sha256 = ENVOY_SHA256,
     strip_prefix = "envoy-" + ENVOY_SHA,
     patches = [
-        "@//patches:sni_support_fix.patch",
+        "@//patches:original-dst-add-sni.patch",
+        "@//patches:test-enable-half-close.patch",
+        "@//patches:add-getTransportSocketFactoryContext.patch",
     ],
     patch_args = ["-p1"],
 )
@@ -43,24 +45,3 @@ envoy_dependencies()
 
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 envoy_dependency_imports()
-
-# Dependencies for Istio filters.
-# Cf. https://github.com/istio/proxy.
-# Version 1.2.2
-# ISTIO_PROXY_SHA = "a975561b980463f08689d3debe33bb9eefc80c3d"
-# ISTIO_PROXY_SHA256 = "c0123fe73be4c9f2fe5e673952743ceb836f5972a8377ea876d90b7ab63af6eb"
-
-#http_archive(
-#    name = "istio_proxy",
-#    url = "https://github.com/istio/proxy/archive/" + ISTIO_PROXY_SHA + ".tar.gz",
-#    sha256 = ISTIO_PROXY_SHA256,
-#    strip_prefix = "proxy-" + ISTIO_PROXY_SHA,
-#)
-
-#load("@istio_proxy//:repositories.bzl", "mixerapi_dependencies")
-#mixerapi_dependencies()
-
-#bind(
-#    name = "boringssl_crypto",
-#    actual = "//external:ssl",
-#)
