@@ -1,0 +1,26 @@
+FROM ubuntu:18.04
+
+#FROM quay.io/cilium/cilium-builder:2019-07-11 as builder
+LABEL maintainer="maintainer@cilium.io"
+
+RUN mkdir -p /go/src/github.com/cilium/cilium/envoy
+WORKDIR /go/src/github.com/cilium/cilium/envoy
+COPY . ./
+
+
+#
+# Install Bazel
+#
+#
+RUN apt-get update && apt-get install -y unzip zip openjdk-11-jdk python3
+
+RUN apt-get install -y curl build-essential clang cmake automake net-tools iputils-ping git
+
+RUN export BAZEL_VERSION=`cat .bazelversion3` && echo $BAZEL_VERSION && \
+     curl -sfL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-dist.zip \
+               -o bazel-${BAZEL_VERSION}-dist.zip && \
+           mkdir -p ./bazel-${BAZEL_VERSION} && \
+           unzip ./bazel-${BAZEL_VERSION}-dist.zip -d ./bazel-${BAZEL_VERSION} && \
+           cd ./bazel-${BAZEL_VERSION} && \
+           env EXTRA_BAZEL_ARGS="--host_javabase=@local_jdk//:jdk" bash ./compile.sh && \
+           cp ./output/bazel /usr/bin && chmod +x /usr/bin/bazel
