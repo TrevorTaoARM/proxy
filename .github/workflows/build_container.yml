@@ -1,0 +1,22 @@
+name: build container
+
+on:
+  push:
+    branches: [ actions ]
+  pull_request:
+    branches: [ actions ]
+
+jobs:
+  # build multi-arch images
+  jobs-build-images:
+    timeout-minutes: 4000
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Login to Quay.io Registry
+      run: docker login -u=${{ secrets.DOCKERHUB_USERNAME }} -p=${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: build multi-arch image
+      timeout-minutes: 4000
+      run: ./build_container/docker_build.sh `date +'%Y-%m-%d'`

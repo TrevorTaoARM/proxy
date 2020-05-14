@@ -16,9 +16,14 @@ FROM iecedge/cilium-builder:test as builder
 LABEL maintainer="maintainer@cilium.io"
 
 ARG ARCH=amd64
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 WORKDIR /go/src/github.com/cilium/cilium/envoy
 COPY . ./
+
+
+RUN echo "Targetplatform:"$TARGETPLATFORM && echo "Buildplatform:"$BUILDPLATFORM
 
 #
 # Additional Envoy Build dependencies
@@ -34,8 +39,10 @@ RUN apt-get update \
 		make \
 		ninja-build \
 		python3 \
+		python \
 		wget \
 		zip \
+		unzip \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -43,24 +50,26 @@ RUN apt-get update \
 # Install Bazel
 #
 RUN export BAZEL_VERSION=`cat .bazelversion` \
-        && if [ "$ARCH" = "amd64" ] ; then \
+        && if [ "$TARGETPLATFORM" = "linux/amd64" ] ; then \
 	     curl -sfL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh -o bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh \
 	     && chmod +x bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh \
 	     && ./bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh \
 	     && mv /usr/local/bin/bazel /usr/bin \
 	     && rm bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh ; \
-           elif [ "$ARCH" = "arm64" ] ; then \
+           elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+	     echo "Install Bazel on arm64: ......" && \
              apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl unzip zip build-essential openjdk-11-jdk && \
              echo "deb https://download.opensuse.org/repositories/home:/mrostecki:/bazel/xUbuntu_20.04/ /" > /etc/apt/sources.list.d/bazel.list && \
              curl -L https://download.opensuse.org/repositories/home:/mrostecki:/bazel/xUbuntu_20.04/Release.key | apt-key add - && \
              apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y bazel ; \
            fi
  
+#             mkdir -p /usr/local/lib/bazel/bin && cp /usr/bin/bazel /usr/local/lib/bazel/bin/bazel-real && cp /usr/bin/bazel /usr/local/lib/bazel/bin/bazel ; \
 
 #
 # Build and keep the cache
 #
-RUN make BAZEL_BUILD_OPTS=--jobs=3 PKG_BUILD=1 ./bazel-bin/cilium-envoy && rm ./bazel-bin/cilium-envoy
+RUN make BAZEL_BUILD_OPTS=--jobs=10 PKG_BUILD=1 ./bazel-bin/cilium-envoy && rm ./bazel-bin/cilium-envoy
 #RUN make BAZEL_BUILD_OPTS="--jobs=10 --host_force_python=PY3"  PKG_BUILD=1 ./bazel-bin/cilium-envoy && rm ./bazel-bin/cilium-envoy
 
 #
