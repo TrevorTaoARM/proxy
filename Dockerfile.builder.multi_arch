@@ -9,7 +9,9 @@
 # The base image here should be multi-arched beforehand when used for non-amd64
 # platforms, e.g, arm64 platform.
 #
-FROM quay.io/cilium/cilium-builder:2020-05-05 as builder
+#FROM quay.io/cilium/cilium-builder:2020-05-05 as builder
+#FROM quay.io/cilium/cilium-builder:2020-05-08 as builder
+FROM iecedge/cilium-builder:test as builder
 
 LABEL maintainer="maintainer@cilium.io"
 
@@ -32,7 +34,6 @@ RUN apt-get update \
 		make \
 		ninja-build \
 		python3 \
-		python \
 		wget \
 		zip \
 	&& apt-get clean \
@@ -59,7 +60,8 @@ RUN export BAZEL_VERSION=`cat .bazelversion` \
 #
 # Build and keep the cache
 #
-RUN make BAZEL_BUILD_OPTS=--jobs=5 PKG_BUILD=1 ./bazel-bin/cilium-envoy && rm ./bazel-bin/cilium-envoy
+RUN make BAZEL_BUILD_OPTS=--jobs=3 PKG_BUILD=1 ./bazel-bin/cilium-envoy && rm ./bazel-bin/cilium-envoy
+#RUN make BAZEL_BUILD_OPTS="--jobs=10 --host_force_python=PY3"  PKG_BUILD=1 ./bazel-bin/cilium-envoy && rm ./bazel-bin/cilium-envoy
 
 #
 # Absolutely nothing after making envoy deps!
